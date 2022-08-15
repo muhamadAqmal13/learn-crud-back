@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
     cors({
         credentials: true,
-        origin: 'https://muhamadaqmal13.github.io/learn-crud/'
+        origin: 'https://muhamadaqmal13.github.io'
     })
 );
 app.use(`/api/teravin/`, employeeRouter);
