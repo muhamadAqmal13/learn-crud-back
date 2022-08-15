@@ -1,4 +1,5 @@
 const { Schema, model } = require('mongoose');
+const { isEmail } = require('validator');
 
 const employeeSchema = new Schema(
     {
@@ -8,7 +9,8 @@ const employeeSchema = new Schema(
         email: {
             type: String,
             required: [true, 'Email harus diisi'],
-            lowercase: true
+            lowercase: true,
+            validate: [isEmail, 'Email tidak valid']
         },
         name: {
             type: String,
