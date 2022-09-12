@@ -17,7 +17,7 @@ app.use(
         origin: 'https://muhamadaqmal13.github.io'
     })
 );
-app.use(`/api/teravin/`, employeeRouter);
+app.use(`/api/v1`, employeeRouter);
 
 app.listen(port, () => {
     console.log(`App running on port ${port}`);
