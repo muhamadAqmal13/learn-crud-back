@@ -71,7 +71,7 @@ const detailEmployee = async (req, res) => {
     }
     try {
         const findEmployee = await Employee.findOne({ _id: id });
-        if (findEmployee == null) {
+        if (findEmployee == null && findEmployee.deleteFlag) {
             return res
                 .status(400)
                 .send({ success: false, msg: 'ID tidak valid' });
@@ -142,7 +142,11 @@ const searchEmployee = async (req, res) => {
         let projection = { createdAt: 0, updatedAt: 0 };
         if (typeof searchBy == 'undefined') {
             total = await Employee.countDocuments();
-            findEmployee = await Employee.find()
+            findEmployee = await Employee.find({
+                $where: function() {
+                    return this.deleteFlag != true
+                }
+            })
                 .limit(limit)
                 .skip(page * limit)
                 .collation({ locale: 'en' })
@@ -206,14 +210,14 @@ const deleteEmployee = async (req, res) => {
         }
 
         const findEmployee = await Employee.findById(_id);
-        if (findEmployee == null) {
+        if (findEmployee == null && findEmployee.deleteFlag) {
             return res
                 .status(400)
                 .send({ succes: false, msg: 'ID karyawan tidak ditemukan' });
         }
 
-        const deleteOneEmployee = await findEmployee.deleteOne({
-            returnDocument: true
+        const deleteOneEmployee = await findEmployee.updateOne({
+            "deleteFlag": true
         });
         return res.send({
             success: true,
