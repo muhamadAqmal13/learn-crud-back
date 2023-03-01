@@ -1,35 +1,21 @@
 const Employee = require('../models/employee');
 
 const createId = async () => {
-    const dates = new Date();
-
-    // Get 2 digit year
-    const year = dates.getFullYear().toString();
-    const _2DigitYears = year.slice(year.length - 2, year.length);
-
-    // Get 2 digit month
-    let month = (dates.getMonth() + 1).toString();
-    if (month < 10) {
-        month = `0${month}`;
-    }
-
-    // Get unix num
-    let unix;
-    const date = dates.getDate();
-    if (date == 1) {
-        return (unix = '0001');
-    } else {
-        const getLastCreated = await Employee.findOne().sort({ _id: -1 });
-        if (getLastCreated == null) {
-            unix = '0001';
-        } else {
-            const id = getLastCreated._id + 1;
-            return id;
+    const lastId = await Employee.findOne().sort({_id: -1})
+    let unix = 1
+    if(lastId) {
+        const lastMonth = parseInt(lastId.toString().slice(2,4))
+        const currentMonth = new Date().getMonth() + 1
+        if(lastMonth === currentMonth) {
+          unix = parseInt(lastId.toString().slice(4,8)) + 1
         }
     }
+  
+    const date = new Date();
+    const year = date.getFullYear().toString()
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
 
-    const id = `${_2DigitYears}${month}${unix}`;
-    return parseInt(id);
+    return parseInt(`${year}${month}${unix.toString().padStart(4, "0")}`)
 };
 
 const addEmployee = async (req, res) => {
@@ -70,8 +56,8 @@ const detailEmployee = async (req, res) => {
         return res.status(400).send({ success: false, msg: 'ID tidak valid' });
     }
     try {
-        const findEmployee = await Employee.findOne({ _id: id });
-        if (findEmployee == null && findEmployee.deleteFlag) {
+        const findEmployee = await Employee.findOne({ _id: id, deleteFlag: false });
+        if (!findEmployee) {
             return res
                 .status(400)
                 .send({ success: false, msg: 'ID tidak valid' });
@@ -91,8 +77,8 @@ const updateEmployee = async (req, res) => {
     try {
         const { _id, ...newData } = req.body;
 
-        const findEmployee = await Employee.findOne({ _id });
-        if (findEmployee == null) {
+        const findEmployee = await Employee.findOne({ _id, deleteFlag: false });
+        if (!findEmployee) {
             return res
                 .status(400)
                 .send({ success: false, msg: 'ID tidak valid' });
@@ -143,9 +129,7 @@ const searchEmployee = async (req, res) => {
         if (typeof searchBy == 'undefined') {
             total = await Employee.countDocuments();
             findEmployee = await Employee.find({
-                $where: function() {
-                    return this.deleteFlag != true
-                }
+                deleteFlag: false
             })
                 .limit(limit)
                 .skip(page * limit)
@@ -153,13 +137,17 @@ const searchEmployee = async (req, res) => {
                 .sort({ [sortBy]: orderBy });
         } else if (searchBy == 'id') {
             findEmployee = await Employee.findOne({
-                _id: parseInt(search)
+                _id: parseInt(search),
+                deleteFlah: false
             });
         } else {
             const args = {
-                $or: [
-                    { name: { $regex: search, $options: 'i' } },
-                    { email: { $regex: search, $options: 'i' } }
+                $and: [
+                    {$or: [
+                        { name: { $regex: search, $options: 'i' } },
+                        { email: { $regex: search, $options: 'i' } }
+                    ]},
+                    {deleteFlag: false}
                 ]
             };
 
@@ -209,8 +197,8 @@ const deleteEmployee = async (req, res) => {
                 .send({ succes: false, msg: 'ID karyawan tidak valid' });
         }
 
-        const findEmployee = await Employee.findById(_id);
-        if (findEmployee == null && findEmployee.deleteFlag) {
+        const findEmployee = await Employee.findOne({_id, deleteFlag: false});
+        if (!findEmployee) {
             return res
                 .status(400)
                 .send({ succes: false, msg: 'ID karyawan tidak ditemukan' });

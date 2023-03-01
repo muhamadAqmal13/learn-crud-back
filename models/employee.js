@@ -27,6 +27,10 @@ const employeeSchema = new Schema(
         address: {
             type: String,
             required: [true, 'Address harus diisi']
+        },
+        deleteFlag: {
+            type: Boolean,
+            default: false
         }
     },
     {
